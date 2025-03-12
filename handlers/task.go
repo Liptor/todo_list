@@ -38,16 +38,24 @@ func (h *Handler) CreateTaskHandler(c *fiber.Ctx) error {
 	
 	defer conn.Release()
 
-	conn.QueryRow(context.Background(), 
-		`INSERT INTO tasks (title, description, status) VALUES ($1, $2, $3)`, 
+	row := conn.QueryRow(context.Background(), 
+		`INSERT INTO tasks (title, description, status) VALUES ($1, $2, $3) RETURNING id`, 
 		taskdata.Title,
 		taskdata.Description,
 		taskdata.Status,
 	)
 
+	var id uint64
+  	err = row.Scan(&id)
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprint(err)) 
+	}
+
+
 	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
 		"message": "Task added seccessfully",
-		"data": taskdata,
+		"task_id": id,
 	})
 }
 

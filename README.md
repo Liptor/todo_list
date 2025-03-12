@@ -56,8 +56,18 @@ migrate -database "postgres://username:password@localhost:5432/todo_list?sslmode
 ```
 
 ### 5. Запуск сервера
+Для локального запуска достаточно ввести команду
+
 ```sh
 go run main.go
+```
+
+Чтобы создать Docker Container 
+
+```sh
+CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+
+docker run -it todo_list
 ```
 
 ## Используемые технологии
@@ -68,3 +78,23 @@ go run main.go
 - **Docker (опционально)** – контейнеризация сервиса
 
 
+## Скриншоты работоспособности сервиса
+Добавление элемента через POST запрос:
+![alt text](<images/add_task.png>)
+Элемент в базе:
+![alt text](<images/add_task_db.png>)
+
+Получение списка всех задач
+![alt text](<images/task_list.png>)
+Наличие этих задач в БД
+![alt text](<images/task_list_db.png>)
+
+Изменение одной задачи
+![alt text](<images/change_task.png>)
+Измененная задача в БД
+![alt text](<images/change_task_db.png>)
+
+Удаление задачи 
+![alt text](<images/delete_task.png>)
+Задача в БД удалена
+![alt text](<images/delete_task_db.png>)
