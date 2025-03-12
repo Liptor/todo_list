@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -37,18 +38,12 @@ func (h *Handler) CreateTaskHandler(c *fiber.Ctx) error {
 	
 	defer conn.Release()
 
-	row := conn.QueryRow(context.Background(), 
+	conn.QueryRow(context.Background(), 
 		`INSERT INTO tasks (title, description, status) VALUES ($1, $2, $3)`, 
 		taskdata.Title,
 		taskdata.Description,
 		taskdata.Status,
 	)
-
-	var id uint64
-	err = row.Scan(&id)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError)
-	}
 
 	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
 		"message": "Task added seccessfully",
@@ -57,17 +52,35 @@ func (h *Handler) CreateTaskHandler(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetTaskHandler(c *fiber.Ctx) error {
-	query := `SELECT id, title, description, status FROM songs WHERE 1=1`
+	query := `SELECT id, title, description, status FROM tasks`
 
 	rows, err := h.DB.Query(context.Background(), query)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to fetch tasks")
+		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprint(err))
 	}
 
 	defer rows.Close()
 
+	items := []map[string]interface{}{} 
+ 
+	for rows.Next() {
+		var id int
+		var title, description, status string
+
+		if err := rows.Scan(&id, &title, &description, &status); err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Failed to scan items")
+		}
+
+		items = append(items, map[string]interface{}{
+			"id": id,
+			"title": title,
+			"description": description,
+			"status": status,
+		})
+	}
+
 	return c.JSON(fiber.Map{
-		"tasks": rows,
+		"tasks": items,
 	})
 }
 
@@ -91,19 +104,19 @@ func (h *Handler) UpdateTaskHandler(c *fiber.Ctx) error {
 	defer conn.Release()
 
 	ct, err := conn.Exec(context.Background(), 
-		"UPDATE task SET title = $2, description = $3, status = $4 WHERE id = $1",
+		"UPDATE tasks SET title = $2, description = $3, status = $4 WHERE id = $1",
 		id, taskdata.Title, taskdata.Description, taskdata.Status,
 	)
 
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Unable to UPDATE %v\n")
+		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprint(err))
 	}
 
 	if ct.RowsAffected() == 0 {
 		return fiber.ErrNotFound
 	}
 
-	return c.SendStatus(fiber.StatusAccepted)
+	return c.Status(fiber.StatusAccepted).SendString("Item Changed Successfully!")
 }
 
 func (h *Handler) DeleteTaskHandler(c *fiber.Ctx) error {
@@ -135,6 +148,6 @@ func (h *Handler) DeleteTaskHandler(c *fiber.Ctx) error {
 
 
 
-	return c.SendStatus(fiber.StatusAccepted)
+	return c.Status(fiber.StatusAccepted).SendString("Item deleted successfully")
 }
 
