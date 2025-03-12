@@ -14,7 +14,7 @@ RUN go mod download
 COPY . ./
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux go build -o /song_library
+RUN CGO_ENABLED=0 GOOS=linux go build -o /todo_list
 
 # Optional:
 # To bind to a TCP port, runtime parameters must be supplied to the docker command.
@@ -24,4 +24,4 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /song_library
 EXPOSE 8080
 
 # Run
-CMD ["/song_library"]
+CMD ["/todo_list"]
